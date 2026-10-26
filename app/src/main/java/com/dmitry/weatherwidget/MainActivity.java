@@ -3,14 +3,19 @@ package com.dmitry.weatherwidget;
 import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.Locale;
@@ -20,64 +25,99 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        overridePendingTransition(0, 0);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.parseColor("#121212"));
-        root.setPadding(dp(20), dp(24), dp(20), dp(24));
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+
+        FrameLayout fullScreenRoot = new FrameLayout(this);
+        fullScreenRoot.setBackgroundColor(Color.TRANSPARENT);
+        fullScreenRoot.setOnClickListener(v -> finish());
+
+        LinearLayout rootCard = new LinearLayout(this);
+        rootCard.setOrientation(LinearLayout.VERTICAL);
+        
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setCornerRadius(dp(28));
+        cardBg.setColor(Color.parseColor("#CC1E293B"));
+        cardBg.setStroke(dp(1), Color.parseColor("#55FFFFFF"));
+        rootCard.setBackground(cardBg);
+        
+        rootCard.setClickable(true);
+        int pad = dp(20);
+        rootCard.setPadding(pad, pad, pad, pad);
+
+        FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(
+                (int) (dm.widthPixels * 0.92f), ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardLp.gravity = Gravity.CENTER;
+        fullScreenRoot.addView(rootCard, cardLp);
 
         TextView title = new TextView(this);
         title.setText("🌤️ Прогноз на 7 дней");
         title.setTextColor(Color.WHITE);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         title.setTypeface(null, Typeface.BOLD);
-        root.addView(title);
+        title.setGravity(Gravity.CENTER);
+        rootCard.addView(title);
 
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setVerticalScrollBarEnabled(false);
         LinearLayout listContainer = new LinearLayout(this);
         listContainer.setOrientation(LinearLayout.VERTICAL);
         scrollView.addView(listContainer);
-
-        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        scrollLp.topMargin = dp(16);
-        root.addView(scrollView, scrollLp);
 
         LocalDate today = LocalDate.now();
         for (int i = 0; i < 7; i++) {
             LocalDate day = today.plusDays(i);
             String dayName = i == 0 ? "Сегодня" : day.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("ru"));
 
-            LinearLayout card = new LinearLayout(this);
-            card.setOrientation(LinearLayout.HORIZONTAL);
-            card.setPadding(dp(16), dp(14), dp(16), dp(14));
-            card.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setPadding(dp(14), dp(12), dp(14), dp(12));
+            row.setGravity(Gravity.CENTER_VERTICAL);
 
-            android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-            bg.setCornerRadius(dp(16));
-            bg.setColor(Color.parseColor("#20FFFFFF"));
-            card.setBackground(bg);
+            GradientDrawable rowBg = new GradientDrawable();
+            rowBg.setCornerRadius(dp(16));
+            rowBg.setColor(Color.parseColor("#18FFFFFF"));
+            row.setBackground(rowBg);
 
             TextView tvDay = new TextView(this);
             tvDay.setText(dayName);
             tvDay.setTextColor(Color.WHITE);
-            tvDay.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+            tvDay.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
             tvDay.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-            card.addView(tvDay);
+            row.addView(tvDay);
 
             TextView tvRange = new TextView(this);
-            tvRange.setText("+" + (20 + i) + "° / +" + (14 + i) + "°");
-            tvRange.setTextColor(Color.parseColor("#B0FFFFFF"));
+            tvRange.setText("+" + (22 - i % 3) + "° / +" + (15 - i % 2) + "°");
+            tvRange.setTextColor(Color.parseColor("#CCFFFFFF"));
             tvRange.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            card.addView(tvRange);
+            tvRange.setTypeface(null, Typeface.BOLD);
+            row.addView(tvRange);
 
-            LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            cardLp.bottomMargin = dp(8);
-            listContainer.addView(card, cardLp);
+            rowLp.topMargin = dp(6);
+            listContainer.addView(row, rowLp);
         }
 
-        setContentView(root);
+        int maxHeight = (int) (dm.heightPixels * 0.5f);
+        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, maxHeight);
+        scrollLp.topMargin = dp(14);
+        rootCard.addView(scrollView, scrollLp);
+
+        setContentView(fullScreenRoot);
+
+        Window window = getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            WindowManager.LayoutParams wlp = window.getAttributes();
+            wlp.dimAmount = 0.45f;
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            window.setAttributes(wlp);
+        }
     }
 
     private int dp(int val) {
