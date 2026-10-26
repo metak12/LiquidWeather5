@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.RemoteViews;
-
 import java.util.concurrent.Executors;
 
 public class WeatherWidget extends AppWidgetProvider {
@@ -39,6 +38,7 @@ public class WeatherWidget extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
         Intent intentActivity = new Intent(context, MainActivity.class);
+        intentActivity.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingActivity = PendingIntent.getActivity(
                 context, 0, intentActivity, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root, pendingActivity);
@@ -46,7 +46,7 @@ public class WeatherWidget extends AppWidgetProvider {
         Intent intentRefresh = new Intent(context, WeatherWidget.class);
         intentRefresh.setAction(ACTION_REFRESH);
         PendingIntent pendingRefresh = PendingIntent.getBroadcast(
-                context, 1, intentRefresh, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                context, widgetId, intentRefresh, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.tv_update_time, pendingRefresh);
 
         manager.updateAppWidget(widgetId, views);
@@ -55,9 +55,10 @@ public class WeatherWidget extends AppWidgetProvider {
             WeatherApiClient.WeatherData data = WeatherApiClient.fetchWeatherSync(context);
             if (data != null) {
                 new Handler(Looper.getMainLooper()).post(() -> {
+                    views.setTextViewText(R.id.tv_city, data.cityName);
                     views.setTextViewText(R.id.tv_temp, String.format("%.0f°", data.temp));
                     views.setTextViewText(R.id.tv_condition, data.conditionText);
-                    views.setTextViewText(R.id.tv_details, "Обновлено только что");
+                    views.setTextViewText(R.id.tv_details, "Только что");
                     manager.updateAppWidget(widgetId, views);
                 });
             }
