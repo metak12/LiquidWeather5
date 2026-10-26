@@ -78,7 +78,7 @@ public class WeatherApiClient {
             }
         } catch (Exception ignored) {
             cityName = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .getString(KEY_CITY, "Москва");
+                    .getString(KEY_CITY, "Курчатов");
         }
 
         String urlString = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
